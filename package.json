@@ -1,0 +1,17 @@
+{
+  "name": "@rikardio/watk",
+  "description": "A collection of WebAudio modules and tools",
+  "version": "0.0.4",
+  "main": "dist/watk.js",
+  "author": "Rikard Lindstrom (https://rikard.io/)",
+  "license": "MIT",
+  "scripts": {
+    "build": "npx rollup src/index.js --file dist/watk.js --format umd --name WATK && npx terser -o dist/watk.min.js --compress --mangle -- dist/watk.js",
+    "test": "jest",
+    "debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
+  },
+  "devDependencies": {
+    "jest": "^26.2.2",
+    "rollup": "^2.27.1"
+  }
+}
