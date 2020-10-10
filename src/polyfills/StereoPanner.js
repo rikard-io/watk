@@ -41,8 +41,8 @@ class PanParameter {
 
   setTargetAtTime(value, time, timeConstant) {
     const [l, r] = this.remapLrValue(value);
-    this.owner.$gainLeft.gain.setTargetTime(l, time, timeConstant);
-    this.owner.$gainRight.gain.setTargetTime(r, time, timeConstant);
+    this.owner.$gainLeft.gain.setTargetAtTime(l, time, timeConstant);
+    this.owner.$gainRight.gain.setTargetAtTime(r, time, timeConstant);
   }
 
   linearRampToValueAtTime(value, time) {
