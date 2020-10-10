@@ -1,9 +1,7 @@
 /**
  * Copyright (c) 2020 Rikard Lindström
  *
- * @TODO long description for the file
- *
- * @summary @TODO short description for the file
+ * @summary Scheduler for scheduling events with some margin for webaudio scheduling
  * @author Rikard Lindstrom <hi@rikard.io>
  */
 
@@ -115,9 +113,7 @@ class Scheduler {
 
   cancelCallback(id) {
     this.events = this.events.filter((evnt) => evnt.id !== id);
-    this._realtimeCallbacks = this._realtimeCallbacks.filter(
-      (evnt) => evnt.id !== id
-    );
+    this._realtimeCallbacks = this._realtimeCallbacks.filter((evnt) => evnt.id !== id);
   }
 }
 

@@ -7,10 +7,6 @@
  * @author Rikard Lindstrom <hi@rikard.io>
  */
 
-import AudioClipBuffered from "./playback/AudioClipBuffered";
-import AudioClipStreaming from "./playback/AudioClipStreaming";
-import Parameter from "./automation/Parameter";
-import WebAudioFakePanner from "./processing/FakePanner";
 import eventMixin from "./aux/eventMixin";
 
 import BufferLoader from "./loading/BufferLoader";
@@ -19,7 +15,6 @@ import Scheduler from "./scheduling/Scheduler";
 import generateUid from "./aux/generateUid";
 
 const defaultOptions = {
-  html5Only: false,
   webAudioContextOptions: { sampleRate: 44100, latencyHint: "playback" },
 };
 
@@ -38,15 +33,11 @@ class Context {
     const supportsWebAudio = !!NativeContext;
 
     this.options = Object.assign({}, defaultOptions, options);
-    if (!this.options.html5Only && supportsWebAudio) {
-      this.waContext =
-        waContext || new NativeContext(this.options.webAudioContextOptions);
+    if (supportsWebAudio) {
+      this.waContext = waContext || new NativeContext(this.options.webAudioContextOptions);
 
-      if (
-        this.waContext.sampleRate !==
-        this.options.webAudioContextOptions.sampleRate
-      ) {
-        console.error(
+      if (this.waContext.sampleRate !== this.options.webAudioContextOptions.sampleRate) {
+        console.warn(
           `Failed setting samplerate to ${this.options.webAudioContextOptions.sampleRate}, sampleRate currently at ${this.waContext.sampleRate}`
         );
       }
@@ -106,45 +97,6 @@ class Context {
     return this.registry[id];
   }
 
-  async loadClip(urlOrProps) {
-    const url = typeof urlOrProps === "string" ? urlOrProps : urlOrProps.url;
-    if (!url)
-      throw new Error(
-        "Url need to be specified either as a string or a .url prop on a object"
-      );
-
-    const clip = this.createClip(
-      typeof urlOrProps === "object" ? urlOrProps : { url }
-    );
-
-    await clip.load();
-    return clip;
-  }
-
-  createClip(props) {
-    let clip;
-    if (this.webAudioEnabled) {
-      clip = new (props && props.streaming
-        ? AudioClipStreaming
-        : AudioClipBuffered)(this, props);
-    } else {
-      throw new Error("not implemented");
-    }
-    if (this.registry[clip.id]) {
-      throw new Error(`Clip already exists with id ${clip.id}`);
-    }
-    this.registry[clip.id] = clip;
-    return clip;
-  }
-
-  createParameter(param) {
-    return new Parameter(this, param);
-  }
-
-  createFakePanner(props) {
-    return new WebAudioFakePanner(this, props);
-  }
-
   load() {
     return Promise.all(
       Object.values(this.registry)
@@ -193,6 +145,7 @@ Context.registerComponent = function (name, ctor) {
     return component;
   };
 };
+
 Object.assign(Context.prototype, eventMixin);
 
 export default Context;

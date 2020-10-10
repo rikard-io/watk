@@ -3,9 +3,10 @@
  *
  * @TODO long description for the file
  *
- * @summary @TODO short description for the file
+ * @summary Parameter for scheduling WebAudioParameters with support for looping
  * @author Rikard Lindstrom <hi@rikard.io>
  */
+import Context from "../Context";
 
 let addCounter = 0;
 const LINEAR_RAMP_TO_VALUE_AT_TIME = "LINEAR_RAMP_TO_VALUE_AT_TIME";
@@ -32,13 +33,8 @@ class Parameter {
     this.events.push(event);
     event.index = addCounter++;
 
-    if (
-      this.events.length &&
-      event.time < this.events[this.events.length - 1].time
-    ) {
-      this.events.sort((a, b) =>
-        a.time === b.time ? a.index - b.index : a.time - b.time
-      );
+    if (this.events.length && event.time < this.events[this.events.length - 1].time) {
+      this.events.sort((a, b) => (a.time === b.time ? a.index - b.index : a.time - b.time));
     }
   }
 
@@ -132,7 +128,13 @@ class Parameter {
   }
 
   cancelAndHoldAtTime(time) {
-    if (this.events.length < 2) return this;
+    if (this.events.length < 2) {
+      this.cancelScheduledValues(time);
+      if (this.events.length) {
+        this.setValueAtTime(this.events[0].value, time);
+      }
+      return this;
+    }
     let eventA, eventB;
     for (let i = 0; i < this.events.length; i++) {
       const event = this.events[i];
@@ -147,14 +149,9 @@ class Parameter {
     if (eventB) {
       if (eventB.type === LINEAR_RAMP_TO_VALUE_AT_TIME) {
         if (eventA) {
-          this.linearRampToValueAtTime(
-            interpolateEvents(time, eventA, eventB),
-            time
-          );
+          this.linearRampToValueAtTime(interpolateEvents(time, eventA, eventB), time);
         } else {
-          throw new Error(
-            "linear ramp without a proceeding event not supported"
-          );
+          throw new Error("linear ramp without a proceeding event not supported");
         }
       } else if (eventA) {
         this.setValueAtTime(eventA.value, time);
@@ -165,12 +162,7 @@ class Parameter {
     return this;
   }
 
-  renderToWebAudioParameter(
-    waParameter,
-    dspTime = 0,
-    offsetTime = 0,
-    duration = 9999
-  ) {
+  renderToWebAudioParameter(waParameter, dspTime = 0, offsetTime = 0, duration = 9999) {
     let frameOffset, frameDuration, endTime;
 
     if (this.loop) {
@@ -206,10 +198,7 @@ class Parameter {
       } else if (event.time >= endTime) {
         if (leadingEvent) {
           // handle event leading up to the first one for this render
-          waParameter.setValueAtTime(
-            interpolateEvents(frameOffset, leadingEvent, event),
-            dspTime
-          );
+          waParameter.setValueAtTime(interpolateEvents(frameOffset, leadingEvent, event), dspTime);
           leadingEvent = null;
         }
 
@@ -220,10 +209,7 @@ class Parameter {
         if (prevEvent) {
           switch (event.type) {
             case SET_VALUE_AT_TIME:
-              waParameter.setValueAtTime(
-                prevEvent.value,
-                dspTime + frameDuration
-              );
+              waParameter.setValueAtTime(prevEvent.value, dspTime + frameDuration);
               break;
             case LINEAR_RAMP_TO_VALUE_AT_TIME:
               waParameter.linearRampToValueAtTime(
@@ -240,10 +226,7 @@ class Parameter {
 
         if (leadingEvent && scheduleTime !== dspTime) {
           // handle event leading up to the first one for this render
-          waParameter.setValueAtTime(
-            interpolateEvents(frameOffset, leadingEvent, event),
-            dspTime
-          );
+          waParameter.setValueAtTime(interpolateEvents(frameOffset, leadingEvent, event), dspTime);
         }
         leadingEvent = null;
         prevEvent = event;
@@ -273,15 +256,12 @@ class Parameter {
     if (this.loop) {
       const durationLeft = duration - frameDuration;
       if (durationLeft > 0) {
-        this.renderToWebAudioParameter(
-          waParameter,
-          dspTime + frameDuration,
-          frameOffset + frameDuration,
-          durationLeft
-        );
+        this.renderToWebAudioParameter(waParameter, dspTime + frameDuration, frameOffset + frameDuration, durationLeft);
       }
     }
   }
 }
+
+Context.registerComponent("Parameter", Parameter);
 
 export default Parameter;

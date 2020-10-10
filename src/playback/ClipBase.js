@@ -2,9 +2,9 @@
  * Copyright (c) 2020 Rikard Lindström
  *
  *
- * @TODO long description for the file
+ * Base class for Clips. Subclass and implement the implX methods
  *
- * @summary @TODO short description for the file
+ * @summary Base class for Clip.
  * @author Rikard Lindstrom <hi@rikard.io>
  */
 import eventMixin from "../aux/eventMixin";
@@ -22,7 +22,7 @@ const defaultProps = {
   volume: 1,
 };
 
-class AudioClip {
+class ClipBase {
   constructor(context, props) {
     this.context = context;
     this.stopTime = null;
@@ -68,6 +68,10 @@ class AudioClip {
 
   get id() {
     return this.props.id;
+  }
+
+  set id(value) {
+    this.props.id = value;
   }
 
   get loop() {
@@ -167,9 +171,7 @@ class AudioClip {
       this.$output.disconnect(destination);
     }
     if (destination) {
-      this.destinations = this.destinations.filter(
-        (dest) => dest !== destination
-      );
+      this.destinations = this.destinations.filter((dest) => dest !== destination);
     } else {
       this.destinations.splice(0);
     }
@@ -193,22 +195,14 @@ class AudioClip {
 
     const _offset = offset + this.loop ? this.loopDuration * this.loopCount : 0;
     const duration = this.loop ? this.loopDuration : this.duration;
-    this.gain.renderToWebAudioParameter(
-      this.$automationGain.gain,
-      time,
-      _offset,
-      duration
-    );
+    this.gain.renderToWebAudioParameter(this.$automationGain.gain, time, _offset, duration);
 
     if (this.loop) {
-      this.context.scheduleCallback(
-        time + this.loopDuration - offset,
-        (time) => {
-          if (!this.stopTime || this.stopTime > time) {
-            this._scheduleAutomation(time, 0, true);
-          }
+      this.context.scheduleCallback(time + this.loopDuration - offset, (time) => {
+        if (!this.stopTime || this.stopTime > time) {
+          this._scheduleAutomation(time, 0, true);
         }
-      );
+      });
     }
   }
 
@@ -225,16 +219,11 @@ class AudioClip {
     this.fade.linearRampToValueAtTime(to, startTime + duration);
     if (this.$fade) {
       this.$fade.gain.cancelScheduledValues(startTime);
-      this.fade.renderToWebAudioParameter(
-        this.$fade.gain,
-        startTime,
-        startTime,
-        duration
-      );
+      this.fade.renderToWebAudioParameter(this.$fade.gain, startTime, startTime, duration);
     }
   }
 }
 
-Object.assign(AudioClip.prototype, eventMixin);
+Object.assign(ClipBase.prototype, eventMixin);
 
-export default AudioClip;
+export default ClipBase;

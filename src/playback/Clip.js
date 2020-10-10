@@ -1,23 +1,26 @@
 /**
  * Copyright (c) 2020 Rikard Lindström
  *
+ * Audio file playback based on the BufferSourceNode with support for:
+ * - Looping beyond buffer length
+ * - Looping parameter controls over gain (at the cost of some scheduling methods like exponentialRamp)
  *
- * @TODO long description for the file
- *
- * @summary @TODO short description for the file
+ * @summary Audio file playback based on the BufferSourceNode
  * @author Rikard Lindstrom <hi@rikard.io>
  */
 
-import AudioClip from "./AudioClip";
+import Context from "../Context";
+import AudioClipBase from "./ClipBase";
 import downSample from "../utils/downSample";
 
-class AudioClipBuffered extends AudioClip {
+class ClipBuffered extends AudioClipBase {
   get duration() {
     return this.$buffer ? this.$buffer.duration : 0;
   }
 
   get isPlaying() {
     const now = this.context.currentTime;
+    if (!this.$sourceNode) return false;
     if (this.startTime === null) return false;
     if (this.startTime > now) return false;
     if (this.stopTime === null) {
@@ -27,6 +30,18 @@ class AudioClipBuffered extends AudioClip {
       return now < this.startTime + this.duration;
     }
     return this.startTime <= now && this.stopTime > now;
+  }
+
+  get currentOffset() {
+    if (!this.isPlaying) {
+      return 0;
+    }
+    const playTime = this.context.currentTime - this.startTime;
+    const offset = playTime + this.startOffset;
+    if (this.loop && offset > this.loopEnd) {
+      return (offset - this.loopEnd) % this.loopDuration;
+    }
+    return Math.min(offset, this.duration);
   }
 
   setBuffer(buffer) {
@@ -71,22 +86,19 @@ class AudioClipBuffered extends AudioClip {
         this.$sourceNode.loopStart = this.loopStart;
         this.$sourceNode.loopEnd = this.loopEnd;
       } else {
-        this.context.scheduleCallback(
-          time + this.loopDuration - offset,
-          (time) => {
-            if (!this.stopTime || this.stopTime > time) {
-              if (!this.$sourceNode) {
-                debugger;
-                throw new Error("clip has no $sourceNode");
-              }
-              // this.$sourceNode.stop(time);
-              this.implStart(time, 0, true);
-              if (this.stopTime) {
-                this.$sourceNode.stop(this.stopTime);
-              }
+        this.context.scheduleCallback(time + this.loopDuration - offset, (time) => {
+          if (!this.stopTime || this.stopTime > time) {
+            if (!this.$sourceNode) {
+              debugger;
+              throw new Error("clip has no $sourceNode");
+            }
+            // this.$sourceNode.stop(time);
+            this.implStart(time, 0, true);
+            if (this.stopTime) {
+              this.$sourceNode.stop(this.stopTime);
             }
           }
-        );
+        });
       }
     }
     this.fade.cancelAndHoldAtTime(time);
@@ -113,9 +125,7 @@ class AudioClipBuffered extends AudioClip {
   handleSourceEnded(sourceNode) {
     if (sourceNode !== this.$sourceNode) {
       sourceNode.disconnect();
-      console.warn(
-        "handleSourceEnded callback called for non active sourceNode. Bug?"
-      );
+      console.warn("handleSourceEnded callback called for non active sourceNode. Bug?");
       return;
     }
     this.$sourceNode.disconnect();
@@ -129,15 +139,22 @@ class AudioClipBuffered extends AudioClip {
 
   async downSample(ratio, mono) {
     if (this.$buffer) {
-      this.$buffer = await downSample(
-        this.$buffer,
-        Math.floor(this.context.sampleRate * ratio),
-        mono
-      );
+      this.$buffer = await downSample(this.$buffer, Math.floor(this.context.sampleRate * ratio), mono);
     } else {
       throw new Error("Clip doesn't have a buffer");
     }
   }
 }
 
-export default AudioClipBuffered;
+Context.registerComponent("Clip", ClipBuffered);
+Context.prototype.loadClip = async function loadClip(urlOrProps) {
+  const url = typeof urlOrProps === "string" ? urlOrProps : urlOrProps.url;
+  if (!url) throw new Error("Url need to be specified either as a string or a .url prop on a object");
+
+  const clip = this.createClip(typeof urlOrProps === "object" ? urlOrProps : { url });
+
+  await clip.load();
+  return clip;
+};
+
+export default ClipBuffered;
