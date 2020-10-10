@@ -8,7 +8,7 @@
  * @author Rikard Lindstrom <hi@rikard.io>
  */
 import eventMixin from "../aux/eventMixin";
-
+import Context from "../Context";
 import Parameter from "../automation/Parameter";
 
 let idCounter = 0;
@@ -24,6 +24,9 @@ const defaultProps = {
 
 class ClipBase {
   constructor(context, props) {
+    if (!(context instanceof Context)) {
+      throw new Error("Clip require a WATK Context");
+    }
     this.context = context;
     this.stopTime = null;
     this.startTime = null;
