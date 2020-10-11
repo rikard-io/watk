@@ -66,7 +66,6 @@ class ClipBuffered extends AudioClipBase {
         // sacrifice the automation gain to mute it
         this.$automationGain.gain.cancelScheduledValues(time);
         this.$automationGain.gain.setTargetAtTime(0, time, 0.01);
-        this.___$automationGain = this.$automationGain;
         this.$automationGain = null;
       }
     }
