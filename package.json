@@ -1,7 +1,7 @@
 {
   "name": "@rikard.io/watk",
   "description": "A collection of WebAudio (ES6) modules and tools",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "module": "src/Context.js",
   "author": "Rikard Lindström (https://rikard.io/)",
   "license": "MIT",
