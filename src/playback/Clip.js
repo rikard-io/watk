@@ -61,7 +61,6 @@ class ClipBuffered extends AudioClipBase {
       try {
         this.$sourceNode.stop(time);
       } catch (e) {
-        console.error(e);
         // state error, most likely already stopped
         // sacrifice the automation gain to mute it
         this.$automationGain.gain.cancelScheduledValues(time);
