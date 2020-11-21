@@ -73,7 +73,9 @@ class ClipBuffered extends AudioClipBase {
     this.$sourceNode.buffer = this.$buffer;
     this.$sourceNode.onended = () => this.handleSourceEnded(sourceNode);
 
+    // call BaseClip to setup $automationGain etc
     this.setupWebAudio();
+
     this.$sourceNode.connect(this.$automationGain);
 
     this._scheduleAutomation(time, offset);
@@ -87,7 +89,6 @@ class ClipBuffered extends AudioClipBase {
         this.context.scheduleCallback(time + this.loopDuration - offset, (time) => {
           if (!this.stopTime || this.stopTime > time) {
             if (!this.$sourceNode) {
-              debugger;
               throw new Error("clip has no $sourceNode");
             }
             // this.$sourceNode.stop(time);

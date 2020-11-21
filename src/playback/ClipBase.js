@@ -198,14 +198,16 @@ class ClipBase {
 
     const _offset = offset + this.loop ? this.loopDuration * this.loopCount : 0;
     const duration = this.loop ? this.loopDuration : this.duration;
-    this.gain.renderToWebAudioParameter(this.$automationGain.gain, time, _offset, duration);
+    if (this.$automationGain) {
+      this.gain.renderToWebAudioParameter(this.$automationGain.gain, time, _offset, duration);
 
-    if (this.loop) {
-      this.context.scheduleCallback(time + this.loopDuration - offset, (time) => {
-        if (!this.stopTime || this.stopTime > time) {
-          this._scheduleAutomation(time, 0, true);
-        }
-      });
+      if (this.loop) {
+        this.context.scheduleCallback(time + this.loopDuration - offset, (time) => {
+          if (!this.stopTime || this.stopTime > time) {
+            this._scheduleAutomation(time, 0, true);
+          }
+        });
+      }
     }
   }
 
